@@ -12,12 +12,9 @@ def main():
     parser = argparse.ArgumentParser(description="Generate weather data")
     parser.add_argument("--project", default=config.PROJECT_ID, help="GCP Project ID")
     parser.add_argument("--dataset", default=config.DATASET_ID, help="BigQuery Dataset ID")
-    parser.add_argument("--stations", type=int, default=config.DEFAULT_STATIONS, help="Number of stations")
-    parser.add_argument("--days", type=int, default=config.DEFAULT_DAYS, help="Days of data")
 
-    # Commands
+    # Only keep clear parameter
     parser.add_argument("--clear", action="store_true", help="Clear all data first")
-    parser.add_argument("--summary", action="store_true", help="Show data summary only")
 
     args = parser.parse_args()
 
@@ -31,22 +28,27 @@ def main():
         confirm = input("Clear all data? (yes/no): ")
         if confirm.lower() == "yes":
             clear_data(generator)
+            print("✅ Data cleared. Run again without --clear to generate fresh data.")
+            return
 
-    generator.generate_all(args.stations, args.days)
+    # Generate default data
+    generator.generate_all()
 
 
 def clear_data(generator):
     """Clear all data from tables"""
     try:
-        # Clear observations first
-        query1 = f"DELETE FROM `{generator.project_id}.{generator.dataset_id}.weather_observations` WHERE TRUE"
-        generator.client.query(query1).result()
-        print("✅ Cleared observations")
+        # Clear in dependency order
+        tables_to_clear = ["weather_observations", "fire_records", "weather_stations"]
 
-        # Clear stations
-        query2 = f"DELETE FROM `{generator.project_id}.{generator.dataset_id}.weather_stations` WHERE TRUE"
-        generator.client.query(query2).result()
-        print("✅ Cleared stations")
+        for table in tables_to_clear:
+            try:
+                query = f"DELETE FROM `{generator.project_id}.{generator.dataset_id}.{table}` WHERE TRUE"
+                generator.client.query(query).result()
+                print(f"✅ Cleared {table}")
+            except Exception as e:
+                if "not found" not in str(e).lower():
+                    print(f"⚠️  Could not clear {table}: {e}")
 
     except Exception as e:
         print(f"❌ Error clearing data: {e}")

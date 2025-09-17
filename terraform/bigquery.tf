@@ -192,6 +192,104 @@ resource "google_bigquery_table" "weather_stations" {
   labels = var.labels
 }
 
+resource "google_bigquery_table" "fire_records" {
+  dataset_id = google_bigquery_dataset.weather_dataset.dataset_id
+  table_id   = "fire_records"
+  project    = var.project_id
+
+  description = "Historical fire incident records for wildfire risk modeling"
+
+  schema = jsonencode([
+    {
+      name = "fire_id"
+      type = "STRING"
+      mode = "REQUIRED"
+      description = "Unique identifier for the fire incident"
+    },
+    {
+      name = "fire_name"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Name or designation of the fire incident"
+    },
+    {
+      name = "location"
+      type = "GEOGRAPHY"
+      mode = "REQUIRED"
+      description = "Geographic location where the fire started"
+    },
+    {
+      name = "fire_date"
+      type = "DATE"
+      mode = "REQUIRED"
+      description = "Date when the fire was first detected or reported"
+    },
+    {
+      name = "fire_size_hectares"
+      type = "FLOAT"
+      mode = "NULLABLE"
+      description = "Total burned area in hectares"
+    },
+    {
+      name = "cause"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Cause of fire: lightning, human, arson, equipment, unknown"
+    },
+    {
+      name = "containment_date"
+      type = "DATE"
+      mode = "NULLABLE"
+      description = "Date when the fire was fully contained"
+    },
+    {
+      name = "fire_status"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Current status: active, contained, controlled, out"
+    },
+    {
+      name = "country"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Country where the fire occurred"
+    },
+    {
+      name = "state_province"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "State or province where the fire occurred"
+    },
+    {
+      name = "city"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Nearest city to the fire location"
+    },
+    {
+      name = "created_at"
+      type = "TIMESTAMP"
+      mode = "REQUIRED"
+      description = "When the record was created in the database"
+    },
+    {
+      name = "updated_at"
+      type = "TIMESTAMP"
+      mode = "NULLABLE"
+      description = "When the record was last updated"
+    }
+  ])
+
+  time_partitioning {
+    type  = "DAY"
+    field = "fire_date"
+  }
+
+  clustering = ["country", "state_province", "cause"]
+
+  labels = var.labels
+}
+
 # IAM binding for BigQuery dataset
 resource "google_bigquery_dataset_iam_binding" "dataset_viewers" {
   count       = length(var.dataset_viewers) > 0 ? 1 : 0
