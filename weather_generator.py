@@ -142,20 +142,6 @@ class WeatherGenerator:
         self.insert_to_bigquery("weather_observations", observations)
 
         print("🎉 Data generation complete!")
-        self.show_summary()
-
-    def show_summary(self):
-        """Show data summary"""
-        try:
-            stations_query = f"SELECT COUNT(*) as count FROM `{self.project_id}.{self.dataset_id}.weather_stations`"
-            obs_query = f"SELECT COUNT(*) as count FROM `{self.project_id}.{self.dataset_id}.weather_observations`"
-
-            stations_count = list(self.client.query(stations_query).result())[0].count
-            obs_count = list(self.client.query(obs_query).result())[0].count
-
-            print(f"\n📊 Summary: {stations_count} stations, {obs_count:,} observations")
-        except Exception as e:
-            print(f"Could not get summary: {e}")
 
     # Helper methods
     def _get_seasonal_temp(self, date: datetime) -> float:

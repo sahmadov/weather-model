@@ -27,10 +27,6 @@ def main():
 
     generator = WeatherGenerator(args.project, args.dataset)
 
-    if args.summary:
-        generator.show_summary()
-        return
-
     if args.clear:
         confirm = input("Clear all data? (yes/no): ")
         if confirm.lower() == "yes":
