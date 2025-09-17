@@ -88,3 +88,9 @@ variable "labels" {
     managed-by  = "terraform"
   }
 }
+
+variable "enable_wildfire_risk" {
+  description = "Enable wildfire risk assessment tables"
+  type        = bool
+  default     = true
+}
