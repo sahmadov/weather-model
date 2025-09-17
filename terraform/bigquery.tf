@@ -192,38 +192,6 @@ resource "google_bigquery_table" "weather_stations" {
   labels = var.labels
 }
 
-# Create a view for daily weather summaries
-resource "google_bigquery_table" "daily_weather_summary" {
-  dataset_id = google_bigquery_dataset.weather_dataset.dataset_id
-  table_id   = "daily_weather_summary"
-  project    = var.project_id
-
-  description = "Daily aggregated weather data"
-
-  view {
-    query = <<EOF
-SELECT
-  station_id,
-  DATE(timestamp) as date,
-  AVG(temperature_celsius) as avg_temperature_celsius,
-  MIN(temperature_celsius) as min_temperature_celsius,
-  MAX(temperature_celsius) as max_temperature_celsius,
-  AVG(humidity_percent) as avg_humidity_percent,
-  AVG(pressure_hpa) as avg_pressure_hpa,
-  AVG(wind_speed_ms) as avg_wind_speed_ms,
-  SUM(precipitation_mm) as total_precipitation_mm,
-  COUNT(*) as observation_count
-FROM
-  `${var.project_id}.${var.dataset_id}.weather_observations`
-GROUP BY
-  station_id, DATE(timestamp)
-EOF
-    use_legacy_sql = false
-  }
-
-  labels = var.labels
-}
-
 # IAM binding for BigQuery dataset
 resource "google_bigquery_dataset_iam_binding" "dataset_viewers" {
   count       = length(var.dataset_viewers) > 0 ? 1 : 0
