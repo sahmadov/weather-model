@@ -1,13 +1,13 @@
 #!/bin/bash
-# Simple setup script for weather data generator
+# Deploy ML pipeline for wildfire prediction
 
 set -e
 
-echo "🚀 Setting up Weather Data Generator..."
+echo "🚀 Deploying ML Pipeline for Wildfire Prediction..."
 
 # Check requirements
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 required. Please install Python 3."
+if ! command -v terraform &> /dev/null; then
+    echo "❌ Terraform required. Please install Terraform."
     exit 1
 fi
 
@@ -27,22 +27,45 @@ fi
 
 echo "📋 Using project: $PROJECT_ID"
 
-# Setup Python environment
-if [ ! -d "venv" ]; then
-    echo "🐍 Creating Python virtual environment..."
-    python3 -m venv venv
+# Check if terraform directory exists
+if [ ! -d "terraform" ]; then
+    echo "❌ terraform directory not found. Please run from project root."
+    exit 1
 fi
 
-source venv/bin/activate
-echo "📦 Installing dependencies..."
-pip install -q -r requirements.txt
+cd terraform
 
-# Export project
-export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+# Create SQL directory if it doesn't exist
+mkdir -p sql
 
-echo "✅ Setup complete!"
+echo "🏗️  Initializing Terraform..."
+terraform init
+
+echo "📝 Planning deployment..."
+terraform plan -var="project_id=$PROJECT_ID"
+
 echo ""
-echo "Next steps:"
-echo "1. Deploy infrastructure: cd terraform && terraform apply"
-echo "2. Generate data: python generate_data.py"
-echo "3. Or run directly: python weather_generator.py"
+read -p "Deploy infrastructure and ML models? (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "🚀 Deploying infrastructure..."
+    terraform apply -var="project_id=$PROJECT_ID" -auto-approve
+
+    echo ""
+    echo "✅ ML Pipeline deployed successfully!"
+    echo ""
+    echo "📊 Created resources:"
+    echo "   - BigQuery dataset: weather_data"
+    echo "   - Training data table: wildfire_training_data"
+    echo "   - ML model: synthetic_wildfire_risk_model"
+    echo "   - Predictions table: next_day_wildfire_predictions"
+    echo ""
+    echo "🔍 Next steps:"
+    echo "   1. View training data: https://console.cloud.google.com/bigquery?project=$PROJECT_ID"
+    echo "   2. Check model performance in BigQuery ML"
+    echo "   3. Review predictions in next_day_wildfire_predictions table"
+else
+    echo "❌ Deployment cancelled"
+fi
+
+cd ..

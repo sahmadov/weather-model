@@ -88,9 +88,24 @@ variable "labels" {
     managed-by  = "terraform"
   }
 }
+variable "training_data_size" {
+  description = "Number of synthetic training records to generate"
+  type        = number
+  default     = 1000
 
-variable "enable_wildfire_risk" {
-  description = "Enable wildfire risk assessment tables"
-  type        = bool
-  default     = true
+  validation {
+    condition     = var.training_data_size >= 100 && var.training_data_size <= 10000
+    error_message = "Training data size must be between 100 and 10,000."
+  }
+}
+
+variable "ml_model_name" {
+  description = "Name of the ML model for wildfire prediction"
+  type        = string
+  default     = "wildfire_risk_model"
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_]+$", var.ml_model_name))
+    error_message = "Model name must contain only letters, numbers, and underscores."
+  }
 }
