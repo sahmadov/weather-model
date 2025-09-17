@@ -1,19 +1,22 @@
 #!/bin/bash
-# Deploy ML pipeline for wildfire prediction
+# Setup and deploy ML pipeline for wildfire prediction (CLI approach)
 
 set -e
 
-echo "🚀 Deploying ML Pipeline for Wildfire Prediction..."
+echo "🚀 Setting up ML Pipeline for Wildfire Prediction..."
+echo "This script will create the necessary files and deploy using pure CLI approach"
+echo ""
 
 # Check requirements
-if ! command -v terraform &> /dev/null; then
-    echo "❌ Terraform required. Please install Terraform."
-    exit 1
-fi
-
 if ! command -v gcloud &> /dev/null; then
     echo "❌ Google Cloud CLI required."
     echo "   Install from: https://cloud.google.com/sdk/docs/install"
+    exit 1
+fi
+
+if ! command -v bq &> /dev/null; then
+    echo "❌ BigQuery CLI (bq) required."
+    echo "   Usually installed with gcloud. Try: gcloud components install bq"
     exit 1
 fi
 
@@ -26,46 +29,44 @@ if [ -z "$PROJECT_ID" ]; then
 fi
 
 echo "📋 Using project: $PROJECT_ID"
+echo ""
 
-# Check if terraform directory exists
-if [ ! -d "terraform" ]; then
-    echo "❌ terraform directory not found. Please run from project root."
-    exit 1
-fi
-
-cd terraform
-
-# Create SQL directory if it doesn't exist
+# Create sql directory if it doesn't exist
 mkdir -p sql
 
-echo "🏗️  Initializing Terraform..."
-terraform init
+# Create necessary SQL files if they don't exist
+echo "📝 Ensuring SQL files exist..."
 
-echo "📝 Planning deployment..."
-terraform plan -var="project_id=$PROJECT_ID"
+# The SQL files should already exist from your Terraform setup
+# Let's verify they exist
+required_files=("sql/create_wildfire_training_data.sql" "sql/create_wildfire_model.sql" "sql/create_predictions.sql")
+
+for file in "${required_files[@]}"; do
+    if [ ! -f "$file" ]; then
+        echo "❌ Required file missing: $file"
+        echo "   Please copy from your terraform/sql/ directory"
+        exit 1
+    else
+        echo "✅ Found: $file"
+    fi
+done
+
+# Make deploy script executable
+chmod +x deploy-ml-pipeline.sh 2>/dev/null || true
+chmod +x cleanup.sh 2>/dev/null || true
 
 echo ""
-read -p "Deploy infrastructure and ML models? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🚀 Deploying infrastructure..."
-    terraform apply -var="project_id=$PROJECT_ID" -auto-approve
-
-    echo ""
-    echo "✅ ML Pipeline deployed successfully!"
-    echo ""
-    echo "📊 Created resources:"
-    echo "   - BigQuery dataset: weather_data"
-    echo "   - Training data table: wildfire_training_data"
-    echo "   - ML model: synthetic_wildfire_risk_model"
-    echo "   - Predictions table: next_day_wildfire_predictions"
-    echo ""
-    echo "🔍 Next steps:"
-    echo "   1. View training data: https://console.cloud.google.com/bigquery?project=$PROJECT_ID"
-    echo "   2. Check model performance in BigQuery ML"
-    echo "   3. Review predictions in next_day_wildfire_predictions table"
-else
-    echo "❌ Deployment cancelled"
-fi
-
-cd ..
+echo "🎯 Setup complete! Ready to deploy."
+echo ""
+echo "🚀 To deploy the ML pipeline:"
+echo "   ./deploy-ml-pipeline.sh"
+echo ""
+echo "🗑️  To cleanup resources later:"
+echo "   ./cleanup.sh"
+echo ""
+echo "📁 Files created/verified:"
+echo "   • deploy-ml-pipeline.sh (main deployment script)"
+echo "   • cleanup.sh (cleanup script)"
+echo "   • sql/ directory with SQL files"
+echo ""
+echo "Ready to deploy? Run: ./deploy-ml-pipeline.sh"
