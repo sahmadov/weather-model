@@ -12,7 +12,7 @@ WITH synthetic_data AS (
     CAST(RAND() * 10 AS FLOAT64) AS visibility_km,
 
     -- Assign a synthetic station ID and elevation
-    CONCAT('station_', CAST(FLOOR(RAND() * 10) + 1 AS STRING)) AS station_id,
+    CONCAT('station_', CAST(FLOOR(RAND() * 16) + 1 AS STRING)) AS station_id,
     CAST(RAND() * 1500 + 50 AS FLOAT64) AS elevation_meters,
 
     -- Categorical features
@@ -24,10 +24,24 @@ WITH synthetic_data AS (
       ELSE 'stormy'
     END AS weather_condition,
 
+    -- All 16 German states (Bundesländer)
     CASE
-      WHEN RAND() < 0.3 THEN 'California'
-      WHEN RAND() < 0.6 THEN 'Colorado'
-      ELSE 'Texas'
+      WHEN RAND() < 0.0625 THEN 'Baden-Württemberg'
+      WHEN RAND() < 0.125 THEN 'Bayern'
+      WHEN RAND() < 0.1875 THEN 'Berlin'
+      WHEN RAND() < 0.25 THEN 'Brandenburg'
+      WHEN RAND() < 0.3125 THEN 'Bremen'
+      WHEN RAND() < 0.375 THEN 'Hamburg'
+      WHEN RAND() < 0.4375 THEN 'Hessen'
+      WHEN RAND() < 0.5 THEN 'Mecklenburg-Vorpommern'
+      WHEN RAND() < 0.5625 THEN 'Niedersachsen'
+      WHEN RAND() < 0.625 THEN 'Nordrhein-Westfalen'
+      WHEN RAND() < 0.6875 THEN 'Rheinland-Pfalz'
+      WHEN RAND() < 0.75 THEN 'Saarland'
+      WHEN RAND() < 0.8125 THEN 'Sachsen'
+      WHEN RAND() < 0.875 THEN 'Sachsen-Anhalt'
+      WHEN RAND() < 0.9375 THEN 'Schleswig-Holstein'
+      ELSE 'Thüringen'
     END AS state_province,
 
     CAST(FLOOR(RAND() * 12) + 1 AS INT64) AS month
