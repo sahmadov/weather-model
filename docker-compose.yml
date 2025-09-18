@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  wildfire-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+      - DATASET_ID=${DATASET_ID:-weather_data}
+      - MODEL_NAME=${MODEL_NAME:-wildfire_risk_model}
+    volumes:
+      # Mount the Google Cloud credentials from host
+      - ${HOME}/.config/gcloud:/home/appuser/.config/gcloud:ro
+      # Alternative: if using different gcloud config location
+      # - ~/.config/gcloud:/home/appuser/.config/gcloud:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

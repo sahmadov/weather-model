@@ -1,3 +1,5 @@
+-- Enhanced wildfire training data with longitude and latitude coordinates
+-- These coordinates are for data enrichment and geographical analysis only
 CREATE OR REPLACE TABLE `${project_id}.${dataset_id}.wildfire_training_data` AS
 WITH synthetic_data AS (
   SELECT
@@ -24,7 +26,7 @@ WITH synthetic_data AS (
       ELSE 'stormy'
     END AS weather_condition,
 
-    -- All 16 German states (Bundesländer)
+    -- All 16 German states (Bundesländer) with random assignment
     CASE
       WHEN RAND() < 0.0625 THEN 'Baden-Württemberg'
       WHEN RAND() < 0.125 THEN 'Bayern'
@@ -47,8 +49,54 @@ WITH synthetic_data AS (
     CAST(FLOOR(RAND() * 12) + 1 AS INT64) AS month
   FROM
     UNNEST(GENERATE_ARRAY(1, ${training_data_size})) -- Generate configurable rows
+),
+-- Add coordinates based on state_province
+data_with_coordinates AS (
+  SELECT
+    *,
+    -- Add longitude and latitude based on German state centers with some random variation
+    CASE state_province
+      WHEN 'Baden-Württemberg' THEN 9.0 + (RAND() - 0.5) * 2.5  -- Center around Stuttgart
+      WHEN 'Bayern' THEN 11.5 + (RAND() - 0.5) * 4.0            -- Center around Munich
+      WHEN 'Berlin' THEN 13.4 + (RAND() - 0.5) * 0.5            -- Berlin area
+      WHEN 'Brandenburg' THEN 13.0 + (RAND() - 0.5) * 2.0       -- Around Potsdam
+      WHEN 'Bremen' THEN 8.8 + (RAND() - 0.5) * 0.3             -- Bremen city
+      WHEN 'Hamburg' THEN 10.0 + (RAND() - 0.5) * 0.3           -- Hamburg city
+      WHEN 'Hessen' THEN 9.0 + (RAND() - 0.5) * 2.0             -- Center around Frankfurt
+      WHEN 'Mecklenburg-Vorpommern' THEN 12.5 + (RAND() - 0.5) * 2.5  -- Schwerin area
+      WHEN 'Niedersachsen' THEN 9.5 + (RAND() - 0.5) * 3.0      -- Hannover area
+      WHEN 'Nordrhein-Westfalen' THEN 7.5 + (RAND() - 0.5) * 2.5  -- Düsseldorf area
+      WHEN 'Rheinland-Pfalz' THEN 7.5 + (RAND() - 0.5) * 2.0    -- Mainz area
+      WHEN 'Saarland' THEN 7.0 + (RAND() - 0.5) * 0.5           -- Saarbrücken area
+      WHEN 'Sachsen' THEN 13.5 + (RAND() - 0.5) * 2.0           -- Dresden area
+      WHEN 'Sachsen-Anhalt' THEN 11.5 + (RAND() - 0.5) * 2.0    -- Magdeburg area
+      WHEN 'Schleswig-Holstein' THEN 9.5 + (RAND() - 0.5) * 2.0  -- Kiel area
+      WHEN 'Thüringen' THEN 11.0 + (RAND() - 0.5) * 1.5         -- Erfurt area
+      ELSE 10.0 + (RAND() - 0.5) * 2.0
+    END AS longitude,
+
+    CASE state_province
+      WHEN 'Baden-Württemberg' THEN 48.5 + (RAND() - 0.5) * 2.0  -- Stuttgart latitude
+      WHEN 'Bayern' THEN 48.5 + (RAND() - 0.5) * 3.0            -- Bavaria range
+      WHEN 'Berlin' THEN 52.5 + (RAND() - 0.5) * 0.3            -- Berlin latitude
+      WHEN 'Brandenburg' THEN 52.3 + (RAND() - 0.5) * 2.0       -- Brandenburg range
+      WHEN 'Bremen' THEN 53.1 + (RAND() - 0.5) * 0.2            -- Bremen latitude
+      WHEN 'Hamburg' THEN 53.6 + (RAND() - 0.5) * 0.2           -- Hamburg latitude
+      WHEN 'Hessen' THEN 50.5 + (RAND() - 0.5) * 2.0            -- Hesse range
+      WHEN 'Mecklenburg-Vorpommern' THEN 53.5 + (RAND() - 0.5) * 1.5  -- MV range
+      WHEN 'Niedersachsen' THEN 52.5 + (RAND() - 0.5) * 2.5     -- Lower Saxony
+      WHEN 'Nordrhein-Westfalen' THEN 51.5 + (RAND() - 0.5) * 2.0  -- NRW range
+      WHEN 'Rheinland-Pfalz' THEN 50.0 + (RAND() - 0.5) * 2.0   -- Rhineland-Palatinate
+      WHEN 'Saarland' THEN 49.4 + (RAND() - 0.5) * 0.5          -- Saarland
+      WHEN 'Sachsen' THEN 51.0 + (RAND() - 0.5) * 1.5           -- Saxony
+      WHEN 'Sachsen-Anhalt' THEN 51.8 + (RAND() - 0.5) * 1.5    -- Saxony-Anhalt
+      WHEN 'Schleswig-Holstein' THEN 54.2 + (RAND() - 0.5) * 1.5  -- Schleswig-Holstein
+      WHEN 'Thüringen' THEN 50.8 + (RAND() - 0.5) * 1.2         -- Thuringia
+      ELSE 51.0 + (RAND() - 0.5) * 2.0
+    END AS latitude
+  FROM synthetic_data
 )
--- Apply rules to label the data
+-- Apply rules to label the data and include coordinates
 SELECT
   *,
   -- Derived risk features
@@ -69,4 +117,4 @@ SELECT
     WHEN temperature_celsius > 25 AND humidity_percent < 50 THEN 'moderate'
     ELSE 'low'
   END AS wildfire_risk_label
-FROM synthetic_data;
+FROM data_with_coordinates;
